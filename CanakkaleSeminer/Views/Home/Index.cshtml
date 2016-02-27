@@ -1,0 +1,93 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <script src="~/Scripts/jquery-2.2.0.min.js"></script>
+    <script src="~/Scripts/jquery.signalR-2.2.0.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+        var hubProxy = $.connection.product;
+        $.connection.hub.logging = true;
+        $.connection.hub.start().done(function () {
+            console.log("hub.start.done");
+        }).fail(function (error) {
+            console.log(error);
+        });
+
+        hubProxy.client.getConnectionID = function (connectionID) {
+            console.log(connectionID);
+            $.post("/Home/CreateBarcode", { ConnectionID: connectionID }).done(function (Image) {
+                var imgHtml = Image.split('æ')[0];
+                var imgName = Image.split('æ')[1];
+                $('#lblMessage').html(imgHtml);
+                $('img.barcode').bind("load", function () {
+                    $.post("/Home/DelImage", { ImageName: imgName }).done(function () {
+                        console.log("ImageDeleted");
+                    }).fail(function (error) {
+                        console.log(error);
+                    });
+                })
+            }).fail(function (error) {
+                console.log(error);
+            })
+        }
+
+        hubProxy.client.moveRobot = function (command) {
+            switch (command) {
+                case "connected":
+                    {
+                        console.log("connected");
+                        $('#lblMessage').hide();
+                        $('#robot').html("<img src='/Images/robot22.png' />");
+                        $('#pbody').css("background-image", "url('/Images/BackGround.jpg')");
+                        break;
+                    }
+                case "right":
+                    {
+                        console.log("right");
+                        $('#robot').clearQueue();
+                        $('#robot').stop();
+                        var _top = $('#robot').position().top;
+                        $('#robot').animate({
+                            top: _top,
+                            left: 1500
+                        }, 4000);
+                        break;
+                    }
+                case "left":
+                    {
+                        console.log("left");
+                        $('#robot').clearQueue();
+                        $('#robot').stop();
+                        var _top = $('#robot').position().top;
+                        $('#robot').animate({
+                            top: _top,
+                            left: 8
+                        }, 4000);
+                        break;
+                    }
+                case "stop":
+                    {
+                        console.log("stop");
+                        $('#robot').clearQueue();
+                        $('#robot').stop();
+                        break;
+                    }
+            }
+        }
+    </script>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+</head>
+<body id="pbody">
+    <div id="robot" style="position:absolute">
+        <img src="~/Images/Reader.png" />
+    </div><br /><br /><br /><br /><br />
+    <span id="lblMessage"></span>
+</body>
+</html>
